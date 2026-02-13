@@ -53,11 +53,20 @@ export const HomePage = () =>  {
     <main className="flex min-h-screen flex-col items-center justify-between w-full pt-[100px] md:pt-[150px]">
       
       {/* 1. HERO SECTION */}
-      <section id="home" className="relative w-full h-[600px] md:h-[500px]flex items-center bg-zinc-100 overflow-hidden">
+      <section id="home" className="relative w-full h-[600px] md:h-[500px] flex items-center bg-zinc-100 overflow-hidden">
         
         {/* Background & Overlay */}
         <div className="absolute inset-0 z-0">
-             <div className="w-full h-full bg-gradient-to-r from-gray-500 to-gray-700" />
+             {/* 1. Replaced Gradient with Image */}
+             <Image 
+                src={homeHeroSection.img} 
+                alt="Hero Background" 
+                fill 
+                className="object-cover"
+                priority // Ensures this loads immediately as it's the largest paint
+             />
+             
+             {/* 2. Dark Overlay (Kept as requested) */}
              <div className="absolute inset-0 bg-black/40 z-10" />
         </div>
         
@@ -244,10 +253,10 @@ export const HomePage = () =>  {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
-             <div className="relative w-full h-64 rounded-sm overflow-hidden bg-gray-100">
+             <div className="relative w-full h-80 rounded-sm overflow-hidden bg-gray-100">
                 <Image src={tech.imageOne} alt="Tech 1" fill className="object-cover" />
              </div>
-             <div className="relative w-full h-64 rounded-sm overflow-hidden bg-gray-100">
+             <div className="relative w-full h-80 rounded-sm overflow-hidden bg-gray-100">
                 <Image src={tech.imageTwo} alt="Tech 2" fill className="object-cover" />
              </div>
           </div>
@@ -311,10 +320,10 @@ export const HomePage = () =>  {
            </div>
 
            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
-             <div className="relative w-full h-64 rounded-sm overflow-hidden bg-gray-100">
+             <div className="relative w-full h-80 rounded-sm overflow-hidden bg-gray-100">
                 <Image src={joinTheRevolutionData.imageOne} alt="Career 1" fill className="object-cover" />
              </div>
-             <div className="relative w-full h-64 rounded-sm overflow-hidden bg-gray-100">
+             <div className="relative w-full h-80 rounded-sm overflow-hidden bg-gray-100">
                 <Image src={joinTheRevolutionData.imageTwo} alt="Career 2" fill className="object-cover" />
              </div>
            </div>
