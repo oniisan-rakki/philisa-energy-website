@@ -23,8 +23,9 @@ export const Carousel = ({ items, renderItem }: CarouselProps) => {
 
     const scroll = (direction: 'left' | 'right') => {
         if (scrollContainerRef.current) {
-            // Scroll by card width (350px) + gap (8px)
-            const scrollAmount = direction === 'left' ? -358 : 358;
+            // Scroll by card width (variable on mobile) + gap
+            // On mobile, card is 85vw, roughly 320px-350px. 320 is a safe scroll amount.
+            const scrollAmount = direction === 'left' ? -320 : 320;
             scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
         }
     };
@@ -40,46 +41,39 @@ export const Carousel = ({ items, renderItem }: CarouselProps) => {
 
     return (
         <div className="relative w-full group">
-            {/* 1. Track: 'items-stretch' makes the WRAPPERS equal height */}
             <div 
                 ref={scrollContainerRef}
-                className="flex items-stretch overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar py-4 gap-10 px-4"
+                className="flex items-stretch overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar py-4 gap-4 px-4 md:px-0"
             >
                 {items.map((item, index) => (
-                    // 2. Wrapper: Flex container allows the child to stretch naturally
-                    <div className="flex-shrink-0 snap-start flex h-auto" key={index}>
+                    <div className="flex-shrink-0 snap-center md:snap-start flex h-auto" key={index}>
                         {renderItem(item)}
                     </div>
                 ))}
             </div>
       
-            {/* 3. Buttons Layer - REPOSITIONED 
-               Moved from 'inset-0 items-center' (Center of Card) 
-               to 'top-[141px]' (Center of Image).
-               
-               Calculation: 
-               - Carousel Padding Top: 16px (py-4)
-               - Image Height: 250px
-               - Image Center: 125px
-               - Total Top: 16px + 125px = 141px
+            {/* BUTTONS: 
+                1. Removed 'hidden md:flex' -> Now just 'flex' (Visible on all screens)
+                2. Adjusted Margins: 
+                   - Mobile: 'ml-[-10px]' / 'mr-[-10px]' (Keeps them visible on screen edges)
+                   - Desktop: 'md:ml-[-25px]' / 'md:mr-[-25px]' (Hangs them nicely outside content)
             */}
-            <div className="pointer-events-none absolute top-[141px] left-0 right-0 flex justify-between px-2 z-10 -translate-y-1/2">
+            <div className="flex pointer-events-none absolute top-[141px] left-0 right-0 justify-between px-2 z-10 -translate-y-1/2">
                 <div className="pointer-events-auto">
                     {showLeftBtn && (
-                        <button onClick={() => scroll('left')} className="w-[50px] h-[50px] bg-white text-black shadow-lg rounded-full flex items-center justify-center transition-transform hover:scale-105 active:scale-95 ml-2">
+                        <button onClick={() => scroll('left')} className="w-[50px] h-[50px] bg-white text-black shadow-lg rounded-full flex items-center justify-center hover:scale-105 active:scale-95 ml-[-10px] md:ml-[-25px]">
                              <svg width="12" height="20" viewBox="0 0 12 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 18L2 10L10 2" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
                         </button>
                     )}
                 </div>
                 <div className="pointer-events-auto">
-                    <button onClick={() => scroll('right')} className="w-[50px] h-[50px] bg-white text-black shadow-lg rounded-full flex items-center justify-center transition-transform hover:scale-105 active:scale-95 -mr-4">
+                    <button onClick={() => scroll('right')} className="w-[50px] h-[50px] bg-white text-black shadow-lg rounded-full flex items-center justify-center hover:scale-105 active:scale-95 mr-[-10px] md:mr-[-25px]">
                          <svg width="12" height="20" viewBox="0 0 12 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 2L10 10L2 18" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
                     </button>
                 </div>
             </div>
 
-            {/* Scroll Progress Bars */}
-            <div className="flex gap-2 mt-4 ml-4">
+            <div className="flex gap-2 mt-4 ml-4 md:ml-0">
                 {[0, 1, 2].map((i) => {
                     const isActive = (i === 0 && scrollProgress < 0.33) || (i === 1 && scrollProgress >= 0.33 && scrollProgress < 0.66) || (i === 2 && scrollProgress >= 0.66);
                     return <div key={i} className={`h-[4px] rounded-full transition-all duration-300 ${isActive ? 'w-[30px] bg-[#FF9C1A]' : 'w-[30px] bg-gray-300'}`} />;

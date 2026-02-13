@@ -1,7 +1,9 @@
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import Image from "next/image";
-import { Carousel } from "../components/Carousel";
+import Link from 'next/link'; // Added Link import
+import { Carousel } from "../components/Carousel"; 
+import { collection, addDoc } from "firebase/firestore"; 
 
 // Data Imports
 import { homeHeroSection } from "../data/homeHeroSection";
@@ -16,90 +18,103 @@ import { newsData } from "../data/newsData";
 import { contactData } from "../data/contactData";
 
 export const HomePage = () =>  {
-return (
-    <main className="flex min-h-screen flex-col items-center justify-between w-full pt-[150px]">
+  // --- CONTACT FORM STATE ---
+  const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', message: '', honeypot: '' });
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (formData.honeypot) return; 
+
+    setStatus('submitting');
+
+    try {
+        await addDoc(collection(db, "mail"), {
+            to: ["info@philisaenergy.com"], 
+            message: {
+                subject: `New Inquiry from ${formData.firstName} ${formData.lastName}`,
+                text: formData.message,
+                html: `<p><strong>Name:</strong> ${formData.firstName} ${formData.lastName}</p>
+                       <p><strong>Email:</strong> ${formData.email}</p>
+                       <p><strong>Message:</strong> ${formData.message}</p>`
+            },
+            replyTo: formData.email 
+        });
+        
+        setStatus('success');
+        setFormData({ firstName: '', lastName: '', email: '', message: '', honeypot: '' });
+    } catch (error) {
+        console.error("Error submitting form: ", error);
+        setStatus('error');
+    }
+  };
+
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-between w-full pt-[100px] md:pt-[150px]">
       
       {/* 1. HERO SECTION */}
-      <section id="home" className="relative w-full h-[500px] flex items-center bg-zinc-100 overflow-hidden">
-        {/* Background */}
+      <section id="home" className="relative w-full h-[600px] md:h-[500px]flex items-center bg-zinc-100 overflow-hidden">
+        
+        {/* Background & Overlay */}
         <div className="absolute inset-0 z-0">
-             <div className="w-full h-full bg-gradient-to-r from-gray-500 to-gray-700" /> 
+             <div className="w-full h-full bg-gradient-to-r from-gray-500 to-gray-700" />
+             <div className="absolute inset-0 bg-black/40 z-10" />
         </div>
         
-        {/* Content Wrapper - Aligned with Header Container */}
-        <div className="relative z-10 container mx-auto px-5 md:px-0 h-full flex items-center">
-            
-            {/* Content Box - Fixed 875px x 200px */}
-            <div className="w-full md:w-[875px] h-[200px] bg-white/90 backdrop-blur-sm px-8 md:px-12 flex flex-col justify-center items-start rounded-sm shadow-sm">
-                
-                {/* H1 */}
-                <h1 className="text-black font-['Inter'] text-[32px] font-black leading-normal mb-2">
+        {/* Main Content */}
+        <div className="relative z-20 container mx-auto px-5 md:px-0 h-full flex items-center">
+            <div className="w-full md:w-[875px] h-auto md:h-[225px] bg-white/90 backdrop-blur-sm px-8 md:px-12 py-8 flex flex-col justify-center items-start rounded-sm shadow-sm">
+                <h1 className="text-black font-['Inter'] text-[24px] md:text-[32px] font-black leading-normal mb-2">
                   {homeHeroSection.header}
                 </h1>
-                
-                {/* Paragraph */}
-                <p className="text-black font-['Inter'] text-[12px] font-normal leading-normal mb-4 max-w-2xl line-clamp-3">
+                <p className="text-black font-['Inter'] text-[13px] font-normal leading-normal mb-7 max-w-2xl">
                   {homeHeroSection.description}
                 </p>
                 
-                {/* Button */}
-                <button className="px-6 py-2 bg-black text-white text-xs font-semibold rounded hover:bg-gray-800 transition-colors">
-                  {homeHeroSection.button}
-                </button>
+                {/* BUTTON LINKED TO #our-story */}
+                <Link href="#our-story">
+                    <button className="px-10 py-4 bg-black text-white text-xs font-semibold rounded hover:bg-[#FF9C1A] hover:text-black transition-colors cursor-pointer">
+                    {homeHeroSection.button}
+                    </button>
+                </Link>
             </div>
         </div>
 
-        {/* Scroll To Discover - Centered at Bottom */}
-        <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer z-20">
-             <span className="text-white font-['Inter'] text-[10px] font-extrabold leading-normal uppercase">
+        {/* --- SCROLL TO DISCOVER --- */}
+        <Link href="#our-story" className="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer z-30">
+             <span className="text-white font-['Inter'] text-[11px] font-black leading-normal uppercase tracking-widest">
                 SCROLL TO DISCOVER
              </span>
-             
-             {/* Chevron Button */}
-             <div 
-                className="w-[15px] h-[15px] bg-gray-300 rounded-full flex items-center justify-center"
-                style={{
-                    background: 'url(/path-to-chevron.png) lightgray 50% / contain no-repeat' 
-                }}
-             >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="black" className="w-2 h-2">
+             <div className="w-[20px] h-[20px] bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="white" className="w-3 h-3 animate-bounce">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                 </svg>
              </div>
-        </div>
+        </Link>
+
       </section>
 
       {/* 2. OUR STORY */}
       <section id="our-story" className="w-full py-10 md:py-15 bg-white">
-        <div className="container mx-auto px-10 md:px-0 max-w-7xl">
-          <h4 className="w-fit mb-2 text-[14px] font-black leading-normal uppercase bg-gradient-to-r from-[#FF9C1A] via-[#0F3460] to-[#020E22] text-transparent bg-clip-text font-['Inter']">
+        <div className="container mx-auto px-5 md:px-0 max-w-7xl">
+          <h4 className="w-fit mb-2 text-[14px] font-black uppercase bg-gradient-to-r from-[#FF9C1A] via-[#0F3460] to-[#020E22] text-transparent bg-clip-text font-['Inter']">
             {ourStoryData.subtitle}
           </h4>
           <h2 className="text-black font-black text-[24px] md:text-[32px] mb-7">
             {ourStoryData.header}
           </h2>
 
-          {/* Text Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-start mb-10">
-            <div>
-               <p className="text-black font-['Inter'] text-[14px] not-italic font-light leading-[28px]">
-                 {ourStoryData.paragraphOne}
-               </p>
-            </div>
-            <div>
-               <p className="text-black font-['Inter'] text-[14px] not-italic font-light leading-[28px]">
-                 {ourStoryData.paragraphTwo}
-               </p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-start mb-10">
+            <p className="text-black text-[14px] font-light leading-[28px]">{ourStoryData.paragraphOne}</p>
+            <p className="text-black text-[14px] font-light leading-[28px]">{ourStoryData.paragraphTwo}</p>
           </div>
 
-          {/* Image Row */}
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-            <div className="bg-black aspect-video w-full rounded-sm">
-                 {/* <Image src={ourStoryData.imageOne} ... /> */}
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
+            <div className="relative aspect-video w-full rounded-sm overflow-hidden bg-gray-100">
+                 <Image src={ourStoryData.imageOne} alt="Our Story 1" fill className="object-cover" />
             </div>
-            <div className="bg-black aspect-video w-full rounded-sm">
-                 {/* <Image src={ourStoryData.imageTwo} ... /> */}
+            <div className="relative aspect-video w-full rounded-sm overflow-hidden bg-gray-100">
+                 <Image src={ourStoryData.imageTwo} alt="Our Story 2" fill className="object-cover" />
             </div>
           </div>
         </div>
@@ -108,14 +123,13 @@ return (
       {/* 3. OUR MISSION */}
       <section id="our-mission" className="w-full py-10 md:py-15 bg-white">
         <div className="container mx-auto px-5 md:px-0 max-w-7xl">
-           <h4 className="w-fit mb-2 text-[14px] font-black leading-normal uppercase bg-gradient-to-r from-[#FF9C1A] via-[#0F3460] to-[#020E22] text-transparent bg-clip-text font-['Inter']">
+           <h4 className="w-fit mb-2 text-[14px] font-black uppercase bg-gradient-to-r from-[#FF9C1A] via-[#0F3460] to-[#020E22] text-transparent bg-clip-text font-['Inter']">
             {ourMissionData.subtitle}
           </h4>
           <h2 className="text-black font-black text-[24px] md:text-[32px] mb-10">
             {ourMissionData.header}
           </h2>
           
-          {/* Container: Using Grid to ensure internal row alignment across all cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-5 md:gap-[25px] w-full items-stretch">
             {ourMissionData.items.map((item, index) => (
               <div 
@@ -126,27 +140,18 @@ return (
                     border: '1px solid transparent',
                 }}
               >
-                 {/* 1. Icon Row - Fixed height ensures the next element (Heading) starts at the same spot in every card */}
                  <div className="h-12 flex items-center justify-start">
-                    <div className="w-12 h-12 flex-shrink-0">
-              <img 
-                  src={item.img} 
-                  alt={item.title} 
-                  className="w-full h-full object-contain"
-              />
-          </div>
-       </div>
-
-                 {/* 2. Heading Row - Fixed minimum height ensures the Paragraph starts at the same spot in every card */}
+                    <div className="w-12 h-12 flex-shrink-0 relative">
+                        <img src={item.img} alt={item.title} className="w-full h-full object-contain" />
+                    </div>
+                 </div>
                  <div className="mt-7 min-h-[56px] flex items-start">
                     <h3 className="text-black font-['Inter'] text-[21px] font-black leading-tight text-left">
                         {item.title}
                     </h3>
                  </div>
-
-                 {/* 3. Text Row */}
                  <div className="mt-5">
-                    <p className="text-black font-['Inter'] text-[14px] not-italic font-light leading-[28px] text-left">
+                    <p className="text-black font-['Inter'] text-[14px] font-light leading-[28px] text-left">
                         {item.description}
                     </p>
                  </div>
@@ -159,34 +164,35 @@ return (
       {/* 4. SOLUTIONS */}
       {ourSolutionsData.map((solution, idx) => (
         <section key={idx} id="solutions" className="w-full py-10 md:py-15 bg-white">
-           <div className="container mx-auto px-10 md:px-0 max-w-7xl">
-            <h4 className="w-fit mb-2 text-[14px] font-black leading-normal uppercase bg-gradient-to-r from-[#FF9C1A] via-[#0F3460] to-[#020E22] text-transparent bg-clip-text font-['Inter']">
+           <div className="container mx-auto px-5 md:px-0 max-w-7xl">
+            <h4 className="w-fit mb-2 text-[14px] font-black uppercase bg-gradient-to-r from-[#FF9C1A] via-[#0F3460] to-[#020E22] text-transparent bg-clip-text font-['Inter']">
                 {solution.subtitle}
             </h4>
-            <h2 className="text-black font-black text-[24px] md:text-[32px] mb-7.5">
+            <h2 className="text-black font-black text-[24px] md:text-[32px] mb-7">
                 {solution.header}
             </h2>
             
-            {/* Text Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
-                 <p className="text-black font-['Inter'] text-[14px] not-italic font-light leading-[28px]">{solution.paragraphOne}</p>
-                 <p className="text-black font-['Inter'] text-[14px] not-italic font-light leading-[28px]">{solution.paragraphTwo}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 mb-12">
+                 <p className="text-black text-[14px] font-light leading-[28px]">{solution.paragraphOne}</p>
+                 <p className="text-black text-[14px] font-light leading-[28px]">{solution.paragraphTwo}</p>
             </div>
 
-            {/* Image Row - FIXED: Removed md:h-auto */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                 {/* Changed to h-64 (or md:h-80 for taller) to ensure it shows up */}
-                 <div className="bg-black w-full h-64 md:h-80 rounded-sm"></div>
-                 <div className="bg-black w-full h-64 md:h-80 rounded-sm"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+                 <div className="relative w-full h-64 md:h-80 rounded-sm overflow-hidden bg-gray-100">
+                    <Image src={solution.imageOne} alt="Solutions 1" fill className="object-cover" />
+                 </div>
+                 <div className="relative w-full h-64 md:h-80 rounded-sm overflow-hidden bg-gray-100">
+                    <Image src={solution.imageTwo} alt="Solutions 2" fill className="object-cover" />
+                 </div>
             </div>
            </div>
         </section>
       ))}
 
       {/* 5. INDUSTRIES (Carousel) */}
-      <section id="industries" className="w-full py-10 md:py-15 bg-white">
-        <div className="container mx-auto px-10 md:px-0 max-w-7xl">
-           <h4 className="w-fit mb-2 text-[14px] font-black leading-normal uppercase bg-gradient-to-r from-[#FF9C1A] via-[#0F3460] to-[#020E22] text-transparent bg-clip-text font-['Inter']">
+      <section id="industries" className="w-full py-10 md:py-15 bg-white overflow-hidden">
+        <div className="container mx-auto px-5 md:px-0 max-w-7xl">
+           <h4 className="w-fit mb-2 text-[14px] font-black uppercase bg-gradient-to-r from-[#FF9C1A] via-[#0F3460] to-[#020E22] text-transparent bg-clip-text font-['Inter']">
             {industriesData.subtitle}
            </h4>
            <h2 className="text-black font-black text-[24px] md:text-[32px] mb-6">
@@ -196,33 +202,22 @@ return (
            <Carousel 
             items={industriesData.items}
             renderItem={(news) => (
-                // 3. Root: REMOVED 'h-full'. 
-                //    We allow the 'flex' parent to stretch this div naturally.
-                <div className="flex flex-col w-[350px]">
-                    
-                    {/* Image Container */}
-                    <div className="w-[350px] h-[250px] bg-gray-200 flex-shrink-0 relative">
-                        {/* <Image src={news.image} ... /> */}
+                <div className="flex flex-col w-[85vw] md:w-[350px]">
+                    <div className="w-full h-[250px] bg-gray-200 flex-shrink-0 relative overflow-hidden">
+                        <Image src={news.img} alt={news.title} fill className="object-cover" />
                     </div>
-
-                    {/* 4. Text Box: 'flex-1' makes it grow to fill the stretched space */}
-                    <div className="w-[350px] flex-1 flex flex-col p-8 bg-white"
+                    <div className="w-full flex-1 flex flex-col p-8 bg-white"
                         style={{
                             borderStyle: 'solid',
                             borderWidth: '0px 1px 1px 1px', 
                             borderColor: 'transparent',
-                            background: `
-                                linear-gradient(#FFF, #FFF) padding-box, 
-                                linear-gradient(90deg, #FF9C1A, #0F3460, #020E22) border-box
-                            `
+                            background: `linear-gradient(#FFF, #FFF) padding-box, linear-gradient(90deg, #FF9C1A, #0F3460, #020E22) border-box`
                         }}
                     >
                         <h3 className="text-black font-['Inter'] text-[16px] font-black uppercase leading-normal mb-4">
                             {news.title}
                         </h3>
-
-                        {/* Text description */}
-                        <p className="w-[250px] text-black font-['Inter'] text-[14px] font-light leading-[28px]">
+                        <p className="w-full text-black font-['Inter'] text-[14px] font-light leading-[28px]">
                             {news.description}
                         </p>
                     </div>
@@ -232,27 +227,29 @@ return (
         </div>
       </section>
 
-      {/* 6. TECHNOLOGY (Refactored) */}
+      {/* 6. TECHNOLOGY */}
       {technologyData.map((tech, idx) => (
-      <section key={idx} id="technology" className="w-full py-24 bg-white">
-        <div className="container mx-auto px-10 md:px-0 max-w-7xl">
-          <h4 className="w-fit mb-2 text-[14px] font-black leading-normal uppercase bg-gradient-to-r from-[#FF9C1A] via-[#0F3460] to-[#020E22] text-transparent bg-clip-text font-['Inter']">
+      <section key={idx} id="technology" className="w-full py-10 md:py-24 bg-white">
+        <div className="container mx-auto px-5 md:px-0 max-w-7xl">
+          <h4 className="w-fit mb-2 text-[14px] font-black uppercase bg-gradient-to-r from-[#FF9C1A] via-[#0F3460] to-[#020E22] text-transparent bg-clip-text font-['Inter']">
             {tech.subtitle}
           </h4>
           <h2 className="text-black font-black text-[24px] md:text-[32px] mb-7">
             {tech.header}
           </h2>
 
-          {/* Text Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-16 mb-10">
-             <p className="text-black font-['Inter'] text-[14px] not-italic font-light leading-[28px]">{tech.paragraphOne}</p>
-             <p className="text-black font-['Inter'] text-[14px] not-italic font-light leading-[28px]">{tech.paragraphTwo}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 mb-10">
+             <p className="text-black text-[14px] font-light leading-[28px]">{tech.paragraphOne}</p>
+             <p className="text-black text-[14px] font-light leading-[28px]">{tech.paragraphTwo}</p>
           </div>
 
-          {/* Image Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-             <div className="bg-black w-full h-64 rounded-sm"></div>
-             <div className="bg-black w-full h-64 rounded-sm"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
+             <div className="relative w-full h-64 rounded-sm overflow-hidden bg-gray-100">
+                <Image src={tech.imageOne} alt="Tech 1" fill className="object-cover" />
+             </div>
+             <div className="relative w-full h-64 rounded-sm overflow-hidden bg-gray-100">
+                <Image src={tech.imageTwo} alt="Tech 2" fill className="object-cover" />
+             </div>
           </div>
         </div>
       </section>
@@ -261,13 +258,12 @@ return (
       {/* 7. SUSTAINABILITY */}
       <section id="sustainability" className="w-full py-10 md:py-15 bg-white">
          <div className="container mx-auto px-5 md:px-0 max-w-7xl">
-           <h4 className="w-fit mb-2 text-[14px] font-black leading-normal uppercase bg-gradient-to-r from-[#FF9C1A] via-[#0F3460] to-[#020E22] text-transparent bg-clip-text font-['Inter']">
+           <h4 className="w-fit mb-2 text-[14px] font-black uppercase bg-gradient-to-r from-[#FF9C1A] via-[#0F3460] to-[#020E22] text-transparent bg-clip-text font-['Inter']">
             {sustainabilityData.subtitle}
           </h4>
           <h2 className="text-black font-black text-[24px] md:text-[32px] mb-10">
             {sustainabilityData.header}
           </h2>
-          {/* Container: Using Grid to ensure internal row alignment across all cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-5 md:gap-[25px] w-full items-stretch">
             {sustainabilityData.items.map((item, index) => (
               <div 
@@ -278,27 +274,18 @@ return (
                     border: '1px solid transparent',
                 }}
               >
-                 {/* 1. Icon Row - Fixed height ensures the next element (Heading) starts at the same spot in every card */}
                  <div className="h-12 flex items-center justify-start">
-                    <div className="w-12 h-12 flex-shrink-0">
-              <img 
-                  src={item.img} 
-                  alt={item.title} 
-                  className="w-full h-full object-contain"
-              />
-          </div>
-       </div>
-
-                 {/* 2. Heading Row - Fixed minimum height ensures the Paragraph starts at the same spot in every card */}
+                    <div className="w-12 h-12 flex-shrink-0 relative">
+                        <img src={item.img} alt={item.title} className="w-full h-full object-contain" />
+                    </div>
+                 </div>
                  <div className="mt-7 min-h-[56px] flex items-start">
                     <h3 className="text-black font-['Inter'] text-[21px] font-black leading-tight text-left">
                         {item.title}
                     </h3>
                  </div>
-
-                 {/* 3. Text Row */}
                  <div className="mt-0">
-                    <p className="text-black font-['Inter'] text-[14px] not-italic font-light leading-[28px] text-left">
+                    <p className="text-black font-['Inter'] text-[14px] font-light leading-[28px] text-left">
                         {item.description}
                     </p>
                  </div>
@@ -308,38 +295,36 @@ return (
          </div>
       </section>
 
-      {/* 8. JOIN THE REVOLUTION (Refactored) */}
+      {/* 8. JOIN THE REVOLUTION */}
       <section id="careers" className="w-full py-10 md:py-15 bg-white">
-        <div className="container mx-auto px-10 md:px-0 max-w-7xl">
-           <h4 className="w-fit mb-2 text-[14px] font-black leading-normal uppercase bg-gradient-to-r from-[#FF9C1A] via-[#0F3460] to-[#020E22] text-transparent bg-clip-text font-['Inter']">
+        <div className="container mx-auto px-5 md:px-0 max-w-7xl">
+           <h4 className="w-fit mb-2 text-[14px] font-black uppercase bg-gradient-to-r from-[#FF9C1A] via-[#0F3460] to-[#020E22] text-transparent bg-clip-text font-['Inter']">
             {joinTheRevolutionData.subtitle}
            </h4>
            <h2 className="text-black font-black text-[24px] md:text-[32px] mb-7">
             {joinTheRevolutionData.header}
            </h2>
 
-           {/* Text Row */}
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-start mb-10">
-             <p className="text-black font-['Inter'] text-[14px] not-italic font-light leading-[28px]">
-                {joinTheRevolutionData.paragraphOne}
-             </p>
-             <p className="text-black font-['Inter'] text-[14px] not-italic font-light leading-[28px]">
-                {joinTheRevolutionData.paragraphTwo}
-             </p>
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-start mb-10">
+             <p className="text-black text-[14px] font-light leading-[28px]">{joinTheRevolutionData.paragraphOne}</p>
+             <p className="text-black text-[14px] font-light leading-[28px]">{joinTheRevolutionData.paragraphTwo}</p>
            </div>
 
-           {/* Image Row */}
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-             <div className="bg-zinc-800 w-full h-64 rounded-sm"></div>
-             <div className="bg-zinc-800 w-full h-64 rounded-sm"></div>
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
+             <div className="relative w-full h-64 rounded-sm overflow-hidden bg-gray-100">
+                <Image src={joinTheRevolutionData.imageOne} alt="Career 1" fill className="object-cover" />
+             </div>
+             <div className="relative w-full h-64 rounded-sm overflow-hidden bg-gray-100">
+                <Image src={joinTheRevolutionData.imageTwo} alt="Career 2" fill className="object-cover" />
+             </div>
            </div>
         </div>
       </section>
 
       {/* 9. NEWS (Carousel) */}
-      <section id="news" className="w-full py-10 md:py-15 bg-white">
-        <div className="container mx-auto px-10 md:px-0 max-w-7xl">
-           <h4 className="w-fit mb-2 text-[14px] font-black leading-normal uppercase bg-gradient-to-r from-[#FF9C1A] via-[#0F3460] to-[#020E22] text-transparent bg-clip-text font-['Inter']">
+      <section id="news" className="w-full py-10 md:py-15 bg-white overflow-hidden">
+        <div className="container mx-auto px-5 md:px-0 max-w-7xl">
+           <h4 className="w-fit mb-2 text-[14px] font-black uppercase bg-gradient-to-r from-[#FF9C1A] via-[#0F3460] to-[#020E22] text-transparent bg-clip-text font-['Inter']">
             {newsData.subtitle}
            </h4>
            <h2 className="text-black font-black text-[24px] md:text-[32px] mb-5">
@@ -349,37 +334,25 @@ return (
            <Carousel 
              items={newsData.items}
              renderItem={(news) => (
-                <div className="flex flex-col w-[350px]">
-                    
-                    {/* Image Container */}
-                    <div className="w-[350px] h-[250px] bg-gray-200 flex-shrink-0 relative">
-                        {/* <Image src={news.image} alt={news.title} fill className="object-cover" /> */}
+                <div className="flex flex-col w-[85vw] md:w-[350px]">
+                    <div className="w-full h-[250px] bg-gray-200 flex-shrink-0 relative overflow-hidden">
+                        <Image src={news.img} alt={news.title} fill className="object-cover" />
                     </div>
-
-                    {/* Text Box: Gradient Border + Flex Grow */}
-                    <div className="w-[350px] flex-1 flex flex-col p-8 bg-white"
+                    <div className="w-full flex-1 flex flex-col p-8 bg-white"
                         style={{
                             borderStyle: 'solid',
                             borderWidth: '0px 1px 1px 1px', 
                             borderColor: 'transparent',
-                            background: `
-                                linear-gradient(#FFF, #FFF) padding-box, 
-                                linear-gradient(90deg, #FF9C1A, #0F3460, #020E22) border-box
-                            `
+                            background: `linear-gradient(#FFF, #FFF) padding-box, linear-gradient(90deg, #FF9C1A, #0F3460, #020E22) border-box`
                         }}
                     >
-                        {/* Heading */}
                         <h3 className="text-black font-['Inter'] text-[16px] font-black uppercase leading-normal mb-4">
                             {news.title}
                         </h3>
-                        
-                        {/* Body Text: Removed 'line-clamp-4' so full text shows */}
-                        <p className="w-[250px] text-black font-['Inter'] text-[14px] font-light leading-[28px] mb-6">
+                        <p className="w-full text-black font-['Inter'] text-[14px] font-light leading-[28px] mb-6">
                             {news.description}
                         </p>
-                        
-                        {/* Button: Pushed to bottom */}
-                        <button className="bg-[#FF9C1A] text-white px-6 py-2 text-sm font-semibold rounded self-start hover:bg-[#e88d17] transition-colors mt-auto cursor-pointer">
+                        <button className="bg-[#000000] text-white px-8 py-3 text-xs font-bold rounded self-start hover:bg-[#FF9C1A] transition-colors mt-auto cursor-pointer hover:text-black">
                             {news.button}
                         </button>
                     </div>
@@ -391,21 +364,21 @@ return (
 
       {/* 10. CONTACT SECTION */}
       <section id="contact" className="w-full py-10 md:py-15 bg-white">
-        <div className="container mx-auto px-10 md:px-0 max-w-7xl">
+        <div className="container mx-auto px-5 md:px-0 max-w-7xl">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
             
             {/* Left Column: Contact Info */}
             <div className="flex flex-col justify-center">
-                <h4 className="w-fit mb-2 text-[14px] font-black leading-normal uppercase bg-gradient-to-r from-[#FF9C1A] via-[#0F3460] to-[#020E22] text-transparent bg-clip-text font-['Inter']">
+                <h4 className="w-fit mb-2 text-[14px] font-black uppercase bg-gradient-to-r from-[#FF9C1A] via-[#0F3460] to-[#020E22] text-transparent bg-clip-text font-['Inter']">
                     {contactData.subtitle}
                 </h4>
               <h2 className="text-black font-black text-[24px] md:text-[32px] mb-5">
                 {contactData.header}
               </h2>
-              <p className="text-black font-['Inter'] text-[14px] not-italic font-light leading-[28px] mb-10">
+              <p className="text-black text-[14px] font-light leading-[28px] mb-10">
                 {contactData.description}
               </p>
-
+              
               <div className="space-y-8">
                 {/* Phone */}
                 <div className="flex items-start gap-6">
@@ -438,72 +411,82 @@ return (
                 </div>
               </div>
             </div>
-
             
-            {/* Right Column: Form */}
+            {/* Right Column: CONTACT FORM */}
             <div 
             className="p-8 md:p-10 shadow-xl rounded-lg"
             style={{
-                // Gradient Border Trick (Full 1px border)
                 border: '1px solid transparent',
-                background: `
-                    linear-gradient(#FFF, #FFF) padding-box, 
-                    linear-gradient(90deg, #FF9C1A, #0F3460, #020E22) border-box
-                `
+                background: `linear-gradient(#FFF, #FFF) padding-box, linear-gradient(90deg, #FF9C1A, #0F3460, #020E22) border-box`
             }}
             >
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={handleSubmit}>
                 
-                {/* First Row: First Name & Last Name */}
+                {/* Honeypot Field (Hidden) */}
+                <div className="hidden">
+                    <input 
+                        type="text" 
+                        name="honeypot" 
+                        value={formData.honeypot}
+                        onChange={(e) => setFormData({...formData, honeypot: e.target.value})}
+                    />
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    
-                    {/* Group 1 */}
                     <div className="flex flex-col gap-3">
                         <label className="text-sm font-semibold text-black ml-1">First Name</label>
                         <input 
+                            required
                             type="text" 
                             placeholder={contactData.contactForm.firstNamePlaceholder} 
+                            value={formData.firstName}
+                            onChange={(e) => setFormData({...formData, firstName: e.target.value})}
                             className="w-full p-3 bg-white rounded-lg border border-black text-black focus:outline-none focus:border-black placeholder-black focus:ring-1 focus:ring-black transition-all" 
                         />
                     </div>
-
-                    {/* Group 2 */}
                     <div className="flex flex-col gap-3">
                         <label className="text-sm font-semibold text-black ml-1">Last Name</label>
                         <input 
+                            required
                             type="text" 
                             placeholder={contactData.contactForm.lastNamePlaceholder} 
+                            value={formData.lastName}
+                            onChange={(e) => setFormData({...formData, lastName: e.target.value})}
                             className="w-full p-3 bg-white border rounded-lg border-black text-black focus:outline-none focus:border-black focus:ring-1 focus:ring-black placeholder-black transition-all" 
                         />
                     </div>
                 </div>
                 
-                {/* Group 3: Email */}
                 <div className="flex flex-col gap-3">
                     <label className="text-sm font-semibold text-black ml-1">Email</label>
                     <input 
+                        required
                         type="email" 
                         placeholder={contactData.contactForm.emailPlaceholder} 
+                        value={formData.email}
+                        onChange={(e) => setFormData({...formData, email: e.target.value})}
                         className="w-full p-3 bg-white border border-black rounded-lg text-black focus:outline-none focus:border-black placeholder-black focus:ring-1 focus:ring-black transition-all" 
                     />
                 </div>
 
-                {/* Group 4: Message */}
                 <div className="flex flex-col gap-3">
                     <label className="text-sm font-semibold text-black ml-1">Message</label>
                     <textarea 
+                        required
                         rows={4} 
                         placeholder={contactData.contactForm.messagePlaceholder} 
+                        value={formData.message}
+                        onChange={(e) => setFormData({...formData, message: e.target.value})}
                         className="w-full p-3 bg-white border rounded-lg border-black text-black focus:outline-none placeholder-black focus:border-black focus:ring-1 focus:ring-black transition-all resize-none"
                     ></textarea>
                 </div>
 
-                {/* Button with Custom Hover Colors & No Rounding */}
                 <button 
                     type="submit" 
-                    className="w-full bg-black text-white font-bold rounded-lg py-4 hover:bg-[#FF9C1A] hover:text-black transition-colors mt-4 cursor-pointer"
+                    disabled={status === 'submitting' || status === 'success'}
+                    className={`w-full text-white font-bold rounded-lg py-4 transition-colors mt-4 cursor-pointer ${status === 'success' ? 'bg-green-600' : 'bg-black hover:bg-[#FF9C1A] hover:text-black'}`}
                 >
-                    {contactData.contactForm.submitButton}
+                    {status === 'submitting' ? 'Sending...' : status === 'success' ? 'Message Sent!' : contactData.contactForm.submitButton}
                 </button>
             </form>
             </div>
