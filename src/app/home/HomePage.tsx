@@ -3,10 +3,8 @@ import React, { useState } from 'react';
 import Image from "next/image";
 import Link from 'next/link';
 import { Carousel } from "../components/Carousel";
-// IMPORTS FIXED:
-import { db } from "../lib/firebase"; 
-import { collection, addDoc } from "firebase/firestore"; 
 
+// Data Imports
 import { homeHeroSection } from "../data/homeHeroSection";
 import { ourStoryData } from "../data/ourStoryData";
 import { ourMissionData } from "../data/ourMissionData";
@@ -19,26 +17,50 @@ import { newsData } from "../data/newsData";
 import { contactData } from "../data/contactData";
 
 export const HomePage = () =>  {
+  // --- CONTACT FORM STATE ---
   const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', message: '', honeypot: '' });
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
 
+  // Helper: Validates email format
+  const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.honeypot) return; // Anti-spam check
+    
+    // 1. Bot Protection & Validation
+    if (formData.honeypot) return; 
+    
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.message) {
+        alert("Please fill in all fields.");
+        return;
+    }
+
+    if (!isValidEmail(formData.email)) {
+        alert("Please enter a valid email address.");
+        return;
+    }
 
     setStatus('submitting');
+
     try {
-        await addDoc(collection(db, "mail"), {
-            to: ["info@philisaenergy.com"], 
-            message: {
-                subject: `New Inquiry from ${formData.firstName} ${formData.lastName}`,
-                text: formData.message,
-                html: `<p><strong>Name:</strong> ${formData.firstName} ${formData.lastName}</p><p><strong>Email:</strong> ${formData.email}</p><p><strong>Message:</strong> ${formData.message}</p>`
-            },
-            replyTo: formData.email 
+        const response = await fetch("https://us-central1-philisa-energy-sa.cloudfunctions.net/sendContactMessage", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                name: `${formData.firstName} ${formData.lastName}`,
+                email: formData.email,
+                message: formData.message,
+                honeypot: formData.honeypot
+            }),
         });
-        setStatus('success');
-        setFormData({ firstName: '', lastName: '', email: '', message: '', honeypot: '' });
+
+        if (response.ok) {
+            setStatus('success');
+            setFormData({ firstName: '', lastName: '', email: '', message: '', honeypot: '' });
+        } else {
+            throw new Error('Server responded with an error');
+        }
+
     } catch (error) {
         console.error("Error submitting form: ", error);
         setStatus('error');
@@ -63,7 +85,6 @@ export const HomePage = () =>  {
                 </Link>
             </div>
         </div>
-        {/* Scroll To Discover (Functional Link) */}
         <Link href="#our-story" className="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer z-30">
              <span className="text-white font-['Inter'] text-[11px] font-black leading-normal uppercase tracking-widest">SCROLL TO DISCOVER</span>
              <div className="w-[20px] h-[20px] bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30">
@@ -209,7 +230,7 @@ export const HomePage = () =>  {
         </div>
       </section>
 
-      {/* 10. CONTACT */}
+      {/* 10. CONTACT (Using Cloud Function) */}
       <section id="contact" className="w-full py-10 md:py-15 bg-white">
         <div className="container mx-auto px-5 md:px-0 max-w-7xl">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
@@ -232,7 +253,7 @@ export const HomePage = () =>  {
                 </div>
                 <div className="flex flex-col gap-3"><label className="text-sm font-semibold text-black ml-1">Email</label><input required type="email" placeholder={contactData.contactForm.emailPlaceholder} value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full p-3 bg-white border border-black rounded-lg text-black focus:outline-none focus:border-black placeholder-black focus:ring-1 focus:ring-black transition-all" /></div>
                 <div className="flex flex-col gap-3"><label className="text-sm font-semibold text-black ml-1">Message</label><textarea required rows={4} placeholder={contactData.contactForm.messagePlaceholder} value={formData.message} onChange={(e) => setFormData({...formData, message: e.target.value})} className="w-full p-3 bg-white border rounded-lg border-black text-black focus:outline-none placeholder-black focus:border-black focus:ring-1 focus:ring-black transition-all resize-none"></textarea></div>
-                <button type="submit" disabled={status === 'submitting' || status === 'success'} className={`w-full text-white font-bold rounded-lg py-4 transition-colors mt-4 cursor-pointer ${status === 'success' ? 'bg-green-600' : 'bg-black hover:bg-[#FF9C1A] hover:text-black'}`}>{status === 'submitting' ? 'Sending...' : status === 'success' ? 'Message Sent!' : contactData.contactForm.submitButton}</button>
+                <button type="submit" disabled={status === 'submitting' || status === 'success'} className={`w-full font-bold rounded-lg py-4 transition-colors mt-4 cursor-pointer ${status === 'success' ? 'bg-green-600 text-white' : 'bg-black hover:bg-[#FF9C1A] hover:text-black text-white'}`}>{status === 'submitting' ? 'Sending...' : status === 'success' ? 'Message Sent!' : status === 'error' ? 'Error. Try Again.' : contactData.contactForm.submitButton}</button>
             </form>
             </div>
           </div>
